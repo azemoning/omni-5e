@@ -221,22 +221,6 @@ func parseSpellLevelSchool(spell *domain.Spell, text string) {
 	}
 }
 
-// extractBoldField extracts the value after a bold field name.
-// Handles both "**Field:** value" and "Field: value" formats.
-func extractBoldField(text, field string) string {
-	// Try bold format first: **Field:** value
-	boldMarker := "**" + field + ":**"
-	if idx := strings.Index(text, boldMarker); idx >= 0 {
-		return strings.TrimSpace(text[idx+len(boldMarker):])
-	}
-	// Try plain format: Field: value
-	plainMarker := field + ":"
-	if idx := strings.Index(text, plainMarker); idx >= 0 {
-		return strings.TrimSpace(text[idx+len(plainMarker):])
-	}
-	return ""
-}
-
 // parseComponents extracts V/S/M from component string.
 func parseComponents(spell *domain.Spell, val string) {
 	val = strings.TrimSpace(val)

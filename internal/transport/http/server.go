@@ -2,7 +2,6 @@ package http
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -145,12 +144,6 @@ func errorHandler(log zerolog.Logger) fiber.ErrorHandler {
 			"detail": err.Error(),
 		})
 	}
-}
-
-// marshalJSON is a helper that ignores errors from json.Marshal for inline use.
-func marshalJSON(v any) []byte {
-	b, _ := json.Marshal(v)
-	return b
 }
 
 const swaggerUIHTML = `<!DOCTYPE html>
