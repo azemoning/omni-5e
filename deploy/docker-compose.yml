@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: omni5e
+      POSTGRES_PASSWORD: omni5e
+      POSTGRES_DB: omni5e
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omni5e"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      OMNI5E_DATABASE_HOST: postgres
+      OMNI5E_DATABASE_PORT: "5432"
+      OMNI5E_DATABASE_USER: omni5e
+      OMNI5E_DATABASE_PASSWORD: omni5e
+      OMNI5E_DATABASE_NAME: omni5e
+      OMNI5E_DATABASE_SSLMODE: disable
+      OMNI5E_SERVER_PORT: "8080"
+      OMNI5E_LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["serve"]
+
+volumes:
+  pgdata:

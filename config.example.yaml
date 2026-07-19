@@ -1,0 +1,22 @@
+# omni-5e Configuration
+# All settings can be overridden via OMNI5E_* environment variables.
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+database:
+  host: localhost
+  port: 5432
+  user: omni5e
+  password: omni5e
+  name: omni5e
+  sslmode: disable
+  max_conns: 25
+
+log:
+  level: info
+  format: json

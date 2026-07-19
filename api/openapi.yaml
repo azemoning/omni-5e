@@ -1,0 +1,917 @@
+openapi: 3.1.0
+info:
+  title: omni-5e
+  description: REST API for the D&D 5e System Reference Document
+  version: 0.1.0
+  license:
+    name: CC-BY-4.0
+    url: https://creativecommons.org/licenses/by/4.0/legalcode
+  contact:
+    name: omni-5e
+    url: https://github.com/omni-5e/omni-5e
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+paths:
+  /meta/srd-versions:
+    get:
+      summary: List available SRD content versions
+      operationId: listSRDVersions
+      tags: [meta]
+      responses:
+        "200":
+          description: Available SRD versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SRDVersion"
+
+  /license:
+    get:
+      summary: Get CC BY 4.0 license attribution
+      operationId: getLicense
+      tags: [meta]
+      responses:
+        "200":
+          description: License information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+
+  /spells:
+    get:
+      summary: List spells
+      operationId: listSpells
+      tags: [spells]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: class
+          in: query
+          schema: { type: string }
+          description: Filter by class slug
+        - name: level
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 9 }
+        - name: school
+          in: query
+          schema: { type: string }
+        - name: ritual
+          in: query
+          schema: { type: boolean }
+        - name: concentration
+          in: query
+          schema: { type: boolean }
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Full-text search
+      responses:
+        "200":
+          description: Paginated list of spells
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpellList"
+
+  /spells/{slug}:
+    get:
+      summary: Get a spell by slug
+      operationId: getSpell
+      tags: [spells]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Spell detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Spell"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /monsters:
+    get:
+      summary: List monsters
+      operationId: listMonsters
+      tags: [monsters]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: cr_min
+          in: query
+          schema: { type: number }
+        - name: cr_max
+          in: query
+          schema: { type: number }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: size
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string, enum: [monster, animal] }
+        - name: q
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of monsters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonsterList"
+
+  /monsters/{slug}:
+    get:
+      summary: Get a monster by slug
+      operationId: getMonster
+      tags: [monsters]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Monster detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Monster"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /classes:
+    get:
+      summary: List classes
+      operationId: listClasses
+      tags: [classes]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated list of classes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassList"
+
+  /classes/{slug}:
+    get:
+      summary: Get a class by slug
+      operationId: getClass
+      tags: [classes]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Class detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Class"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /classes/{slug}/subclasses:
+    get:
+      summary: List subclasses for a class
+      operationId: getSubclasses
+      tags: [classes]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Subclasses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Subclass"
+
+  /classes/{slug}/levels/{level}:
+    get:
+      summary: Get class level table row
+      operationId: getClassLevel
+      tags: [classes]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - name: level
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 20 }
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Level table row
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ClassLevelTableRow"
+
+  /species:
+    get:
+      summary: List species (races)
+      operationId: listSpecies
+      tags: [species]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: size
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of species
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeciesList"
+
+  /species/{slug}:
+    get:
+      summary: Get a species by slug
+      operationId: getSpecies
+      tags: [species]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Species detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Species"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /backgrounds:
+    get:
+      summary: List backgrounds
+      operationId: listBackgrounds
+      tags: [backgrounds]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated list of backgrounds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackgroundList"
+
+  /backgrounds/{slug}:
+    get:
+      summary: Get a background by slug
+      operationId: getBackground
+      tags: [backgrounds]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Background detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Background"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /feats:
+    get:
+      summary: List feats
+      operationId: listFeats
+      tags: [feats]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of feats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatList"
+
+  /feats/{slug}:
+    get:
+      summary: Get a feat by slug
+      operationId: getFeat
+      tags: [feats]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Feat detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Feat"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /equipment:
+    get:
+      summary: List equipment
+      operationId: listEquipment
+      tags: [equipment]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: category
+          in: query
+          schema: { type: string, enum: [weapon, armor, tool, gear, mount, vehicle] }
+      responses:
+        "200":
+          description: Paginated list of equipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquipmentList"
+
+  /equipment/{slug}:
+    get:
+      summary: Get equipment by slug
+      operationId: getEquipment
+      tags: [equipment]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Equipment detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Equipment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /magic-items:
+    get:
+      summary: List magic items
+      operationId: listMagicItems
+      tags: [magic-items]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: rarity
+          in: query
+          schema: { type: string }
+        - name: attunement
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Paginated list of magic items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MagicItemList"
+
+  /magic-items/{slug}:
+    get:
+      summary: Get a magic item by slug
+      operationId: getMagicItem
+      tags: [magic-items]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Magic item detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MagicItem"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /conditions:
+    get:
+      summary: List conditions
+      operationId: listConditions
+      tags: [conditions]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated list of conditions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionList"
+
+  /conditions/{slug}:
+    get:
+      summary: Get a condition by slug
+      operationId: getCondition
+      tags: [conditions]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Condition detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Condition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /glossary:
+    get:
+      summary: List glossary terms
+      operationId: listGlossaryTerms
+      tags: [glossary]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of glossary terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryTermList"
+
+  /glossary/{slug}:
+    get:
+      summary: Get a glossary term by slug
+      operationId: getGlossaryTerm
+      tags: [glossary]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Glossary term detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/GlossaryTerm"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /rules:
+    get:
+      summary: List rule sections
+      operationId: listRuleSections
+      tags: [rules]
+      parameters:
+        - $ref: "#/components/parameters/srd_version"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: source_file
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of rule sections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSectionList"
+
+  /rules/{slug}:
+    get:
+      summary: Get a rule section by slug
+      operationId: getRuleSection
+      tags: [rules]
+      parameters:
+        - $ref: "#/components/parameters/slug"
+        - $ref: "#/components/parameters/srd_version"
+      responses:
+        "200":
+          description: Rule section detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/RuleSection"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    srd_version:
+      name: srd_version
+      in: query
+      schema: { type: string }
+      description: SRD content version (e.g. 5.2.1). Also via X-SRD-Version header.
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, default: 50, minimum: 1, maximum: 200 }
+    offset:
+      name: offset
+      in: query
+      schema: { type: integer, default: 0, minimum: 0 }
+    slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+
+  schemas:
+    ProblemDetail:
+      type: object
+      properties:
+        type: { type: string, example: "about:blank" }
+        title: { type: string, example: "Not Found" }
+        status: { type: integer, example: 404 }
+        detail: { type: string }
+
+    SRDVersion:
+      type: object
+      properties:
+        version: { type: string, example: "5.2.1" }
+        release_date: { type: string, format: date, nullable: true }
+        source_url: { type: string }
+        license: { type: string }
+        is_default: { type: boolean }
+
+    License:
+      type: object
+      properties:
+        license: { type: string }
+        source_url: { type: string }
+        version: { type: string }
+        text: { type: string }
+
+    PaginationMeta:
+      type: object
+      properties:
+        srd_version: { type: string }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    PaginationLinks:
+      type: object
+      properties:
+        self: { type: string }
+        next: { type: string, nullable: true }
+        prev: { type: string, nullable: true }
+
+    Spell:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        level: { type: integer }
+        school: { type: string }
+        casting_time: { type: string }
+        range: { type: string }
+        components:
+          type: object
+          properties:
+            verbal: { type: boolean }
+            somatic: { type: boolean }
+            material: { type: boolean }
+            material_detail: { type: string }
+        duration: { type: string }
+        concentration: { type: boolean }
+        ritual: { type: boolean }
+        description: { type: string }
+        at_higher_levels: { type: string }
+        class_slugs: { type: array, items: { type: string } }
+
+    SpellList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Spell" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    Monster:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        size: { type: string }
+        type: { type: string }
+        alignment: { type: string }
+        ac:
+          type: object
+          properties:
+            value: { type: integer }
+            source: { type: string }
+        hp:
+          type: object
+          properties:
+            average: { type: integer }
+            formula: { type: string }
+        speed: { type: object, additionalProperties: { type: integer } }
+        ability_scores:
+          type: object
+          properties:
+            str: { type: integer }
+            dex: { type: integer }
+            con: { type: integer }
+            int: { type: integer }
+            wis: { type: integer }
+            cha: { type: integer }
+        cr: { type: number }
+        xp: { type: integer }
+        category: { type: string, enum: [monster, animal] }
+        traits: { type: array, items: { $ref: "#/components/schemas/NamedBlock" } }
+        actions: { type: array, items: { $ref: "#/components/schemas/NamedBlock" } }
+        bonus_actions: { type: array, items: { $ref: "#/components/schemas/NamedBlock" } }
+        reactions: { type: array, items: { $ref: "#/components/schemas/NamedBlock" } }
+        legendary_actions: { type: array, items: { $ref: "#/components/schemas/NamedBlock" } }
+
+    MonsterList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Monster" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    NamedBlock:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+
+    Class:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        hit_die: { type: integer }
+        primary_ability: { type: string }
+        saving_throw_proficiencies: { type: array, items: { type: string } }
+        armor_proficiencies: { type: array, items: { type: string } }
+        weapon_proficiencies: { type: array, items: { type: string } }
+        description: { type: string }
+        subclasses: { type: array, items: { $ref: "#/components/schemas/Subclass" } }
+
+    ClassList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Class" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    Subclass:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        class_slug: { type: string }
+        description: { type: string }
+
+    ClassLevelTableRow:
+      type: object
+      properties:
+        class_slug: { type: string }
+        level: { type: integer }
+        proficiency_bonus: { type: integer }
+        features_unlocked: { type: array, items: { type: string } }
+        other_columns: { type: object, additionalProperties: { type: string } }
+
+    Species:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        size: { type: string }
+        speed: { type: integer }
+        traits: { type: array, items: { $ref: "#/components/schemas/Trait" } }
+        description: { type: string }
+
+    SpeciesList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Species" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    Trait:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+
+    Background:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        ability_score_options: { type: object }
+        skill_proficiencies: { type: array, items: { type: string } }
+        granted_feat_slug: { type: string }
+        equipment: { type: array, items: { type: string } }
+        description: { type: string }
+
+    BackgroundList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Background" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    Feat:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        category: { type: string }
+        prerequisite: { type: string }
+        description: { type: string }
+        repeatable: { type: boolean }
+
+    FeatList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Feat" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    Equipment:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        category: { type: string }
+        cost: { type: string }
+        weight: { type: number }
+        properties: { type: object }
+        description: { type: string }
+
+    EquipmentList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Equipment" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    MagicItem:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        rarity: { type: string }
+        requires_attunement: { type: boolean }
+        type: { type: string }
+        description: { type: string }
+
+    MagicItemList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/MagicItem" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    Condition:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        description: { type: string }
+
+    ConditionList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/Condition" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    GlossaryTerm:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        category: { type: string }
+        definition: { type: string }
+
+    GlossaryTermList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/GlossaryTerm" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
+
+    RuleSection:
+      type: object
+      properties:
+        slug: { type: string }
+        url: { type: string }
+        srd_version: { type: string }
+        name: { type: string }
+        source_file: { type: string }
+        heading_path: { type: array, items: { type: string } }
+        body: { type: string }
+
+    RuleSectionList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/RuleSection" } }
+        meta: { $ref: "#/components/schemas/PaginationMeta" }
+        links: { $ref: "#/components/schemas/PaginationLinks" }
