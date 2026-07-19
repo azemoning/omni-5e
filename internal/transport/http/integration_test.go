@@ -11,7 +11,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/azemoning/omni-5e/internal/config"
-	"github.com/azemoning/omni-5e/internal/domain"
 	"github.com/azemoning/omni-5e/internal/service"
 	"github.com/azemoning/omni-5e/internal/store/postgres"
 	httpserver "github.com/azemoning/omni-5e/internal/transport/http"
