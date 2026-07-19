@@ -1,5 +1,7 @@
 version: 2
 
+project_name: omni-5e
+
 builds:
   - main: ./cmd/omni-5e
     binary: omni-5e
@@ -12,22 +14,37 @@ builds:
       - arm64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
 
 archives:
   - format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
 
 dockers:
   - image_templates:
-      - "ghcr.io/omni-5e/omni-5e:{{ .Version }}"
-      - "ghcr.io/omni-5e/omni-5e:latest"
+      - "ghcr.io/azemoning/omni-5e:{{ .Version }}"
+      - "ghcr.io/azemoning/omni-5e:latest"
     dockerfile: deploy/Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
 
 checksum:
   name_template: "checksums.txt"
 
 changelog:
   sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^fix:"
+      - "^chore:"
+      - "^ci:"

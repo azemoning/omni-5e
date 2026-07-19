@@ -162,11 +162,24 @@ var dbResetCmd = &cobra.Command{
 	},
 }
 
+var (
+	appVersion = "dev"
+	appCommit  = "none"
+	appDate    = "unknown"
+)
+
+// SetVersionInfo sets the version info from main package.
+func SetVersionInfo(version, commit, date string) {
+	appVersion = version
+	appCommit = commit
+	appDate = date
+}
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("omni-5e v0.1.0")
+		fmt.Printf("omni-5e %s (commit: %s, built: %s)\n", appVersion, appCommit, appDate)
 		fmt.Println("Supported SRD versions: 5.2.1")
 	},
 }
