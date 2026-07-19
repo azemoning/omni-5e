@@ -94,7 +94,7 @@ func seedTestData(t *testing.T, pool *pgxpool.Pool) {
 		{"healing-word", "Healing Word", "abjuration", 1},
 	} {
 		_, err := pool.Exec(ctx,
-			`INSERT INTO spells (id, srd_version_id, slug, name, level, school, description) VALUES ($1, $2, $3, $4, $5, $6, 'Test spell')`,
+			`INSERT INTO spells (id, srd_version_id, slug, name, level, school, casting_time, range, duration, components, description, at_higher_levels) VALUES ($1, $2, $3, $4, $5, $6, 'Action', 'Self', 'Instantaneous', '{}', 'Test spell', '')`,
 			uuid.New(), srdID, s.slug, s.name, s.level, s.school)
 		require.NoError(t, err)
 	}
@@ -139,9 +139,12 @@ func TestIntegrationSpellEndpoints(t *testing.T) {
 	resp, err := http.Get(baseURL + "/api/v1/spells")
 	require.NoError(t, err)
 	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		t.Logf("unexpected status %d, body: %s", resp.StatusCode, string(body))
+	}
 	assert.Equal(t, 200, resp.StatusCode)
 
-	body, _ := io.ReadAll(resp.Body)
 	var result map[string]any
 	json.Unmarshal(body, &result)
 	assert.NotNil(t, result["data"])
@@ -150,9 +153,12 @@ func TestIntegrationSpellEndpoints(t *testing.T) {
 	resp, err = http.Get(baseURL + "/api/v1/spells/fireball")
 	require.NoError(t, err)
 	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		t.Logf("fireball status %d, body: %s", resp.StatusCode, string(body))
+	}
 	assert.Equal(t, 200, resp.StatusCode)
 
-	body, _ = io.ReadAll(resp.Body)
 	json.Unmarshal(body, &result)
 	data := result["data"].(map[string]any)
 	assert.Equal(t, "Fireball", data["name"])

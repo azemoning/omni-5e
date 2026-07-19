@@ -2,13 +2,8 @@ linters:
   enable:
     - govet
     - staticcheck
-    - errcheck
     - gosimple
     - ineffassign
     - unused
   disable:
     - errcheck
-
-linters-settings:
-  errcheck:
-    check-type-assertions: false
