@@ -25,18 +25,6 @@ archives:
       - goos: windows
         format: zip
 
-dockers:
-  - image_templates:
-      - "ghcr.io/azemoning/omni-5e:{{ .Version }}"
-      - "ghcr.io/azemoning/omni-5e:latest"
-    dockerfile: deploy/Dockerfile
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-
 checksum:
   name_template: "checksums.txt"
 
