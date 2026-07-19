@@ -2,9 +2,9 @@ package http
 
 import (
 	"crypto/md5"
+	_ "embed"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -18,6 +18,9 @@ import (
 	v1 "github.com/azemoning/omni-5e/internal/transport/http/v1"
 	"github.com/rs/zerolog"
 )
+
+//go:embed openapi.yaml
+var openapiSpec []byte
 
 // Server holds the Fiber app and its dependencies.
 type Server struct {
@@ -75,18 +78,8 @@ func (s *Server) setupRoutes() {
 
 	// OpenAPI spec
 	s.app.Get("/openapi.json", func(c fiber.Ctx) error {
-		data, err := os.ReadFile("api/openapi.yaml")
-		if err != nil {
-			// Try embedded/relative paths
-			data, err = os.ReadFile("../api/openapi.yaml")
-			if err != nil {
-				return c.Status(404).JSON(fiber.Map{"error": "openapi spec not found"})
-			}
-		}
-		// Convert YAML to JSON for serving
-		// For simplicity, serve the raw YAML with correct content type
 		c.Set("Content-Type", "application/yaml")
-		return c.Send(data)
+		return c.Send(openapiSpec)
 	})
 
 	// Swagger UI
