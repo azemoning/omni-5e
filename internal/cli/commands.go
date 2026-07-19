@@ -162,8 +162,28 @@ var dbResetCmd = &cobra.Command{
 	},
 }
 
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("omni-5e v0.1.0")
+		fmt.Println("Supported SRD versions: 5.2.1")
+	},
+}
+
+var licenseCmd = &cobra.Command{
+	Use:   "license",
+	Short: "Print CC BY 4.0 attribution",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("This work includes material taken from the System Reference Document 5.2.1")
+		fmt.Println("by Wizards of the Coast LLC, available at https://www.dndbeyond.com/resources/1781-system-reference-document-5-2-1")
+		fmt.Println("The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License.")
+		fmt.Println("https://creativecommons.org/licenses/by/4.0/legalcode")
+	},
+}
+
 func init() {
-	rootCmd.AddCommand(exportCmd, validateCmd, dbCmd)
+	rootCmd.AddCommand(exportCmd, validateCmd, dbCmd, versionCmd, licenseCmd)
 	exportCmd.Flags().String("version", "5.2.1", "SRD content version")
 	exportCmd.Flags().String("out", "export.json", "output file path")
 	validateCmd.Flags().String("version", "5.2.1", "SRD content version to validate")
