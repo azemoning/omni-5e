@@ -3,18 +3,12 @@ package srd521
 import (
 	"context"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/azemoning/omni-5e/internal/domain"
 	"github.com/azemoning/omni-5e/internal/ingest/shared"
 	"github.com/yuin/goldmark/ast"
 	extast "github.com/yuin/goldmark/extension/ast"
-)
-
-var (
-	levelSchoolRe = regexp.MustCompile(`(?i)(Level\s+(\d+)\s+)?(\w+)\s+(Cantrip|(\w+))`)
-	cantripRe     = regexp.MustCompile(`(?i)(\w+)\s+Cantrip`)
 )
 
 // ParseSpells parses spells from spells.md.
