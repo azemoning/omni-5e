@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -45,7 +46,6 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 	pool, err := pgxpool.New(ctx, dsn)
 	require.NoError(t, err)
 
-	// Run migrations
 	migrationSQL := `
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE TABLE srd_versions (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), version TEXT UNIQUE NOT NULL, release_date DATE, source_url TEXT NOT NULL, license TEXT NOT NULL DEFAULT 'CC-BY-4.0', is_default BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
@@ -79,14 +79,12 @@ func seedTestData(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 
-	// Insert SRD version
 	srdID := uuid.New()
 	_, err := pool.Exec(ctx,
 		`INSERT INTO srd_versions (id, version, source_url, license, is_default) VALUES ($1, '5.2.1', 'https://example.com', 'CC-BY-4.0', true)`,
 		srdID)
 	require.NoError(t, err)
 
-	// Insert spells
 	for _, s := range []struct {
 		slug, name, school string
 		level              int
@@ -101,11 +99,20 @@ func seedTestData(t *testing.T, pool *pgxpool.Pool) {
 		require.NoError(t, err)
 	}
 
-	// Insert a monster
 	_, err = pool.Exec(ctx,
 		`INSERT INTO monsters (id, srd_version_id, slug, name, size, type, alignment, ac_value, hp_avg, cr, xp, category) VALUES ($1, $2, 'beholder', 'Beholder', 'Large', 'Aberration', 'Lawful Evil', 18, 180, 13, 10000, 'monster')`,
 		uuid.New(), srdID)
 	require.NoError(t, err)
+}
+
+// getFreePort returns an available port.
+func getFreePort(t *testing.T) int {
+	t.Helper()
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	port := l.Addr().(*net.TCPAddr).Port
+	l.Close()
+	return port
 }
 
 func TestIntegrationSpellEndpoints(t *testing.T) {
@@ -113,27 +120,23 @@ func TestIntegrationSpellEndpoints(t *testing.T) {
 	defer cleanup()
 	seedTestData(t, pool)
 
-	ctx := context.Background()
 	store := postgres.New(pool)
 	svc := service.New(store, store, store, store, store, store, store, store, store, store, store, store, store, store)
 
 	log := zerolog.Nop()
+	port := getFreePort(t)
 	cfg := &config.Config{
-		Server: config.ServerConfig{Host: "127.0.0.1", Port: 0},
+		Server: config.ServerConfig{Host: "127.0.0.1", Port: port},
 	}
 	srv := httpserver.NewServer(cfg, log, svc)
 
-	// Start server in background
-	go func() {
-		srv.Start()
-	}()
-	time.Sleep(100 * time.Millisecond)
+	go srv.Start()
+	time.Sleep(200 * time.Millisecond)
 	defer srv.Shutdown()
 
-	_ = ctx
+	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
 
-	// Test list spells
-	resp, err := http.Get("http://127.0.0.1:8080/api/v1/spells")
+	resp, err := http.Get(baseURL + "/api/v1/spells")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -144,8 +147,7 @@ func TestIntegrationSpellEndpoints(t *testing.T) {
 	assert.NotNil(t, result["data"])
 	assert.NotNil(t, result["meta"])
 
-	// Test get spell by slug
-	resp, err = http.Get("http://127.0.0.1:8080/api/v1/spells/fireball")
+	resp, err = http.Get(baseURL + "/api/v1/spells/fireball")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -156,14 +158,12 @@ func TestIntegrationSpellEndpoints(t *testing.T) {
 	assert.Equal(t, "Fireball", data["name"])
 	assert.Equal(t, float64(3), data["level"])
 
-	// Test404
-	resp, err = http.Get("http://127.0.0.1:8080/api/v1/spells/nonexistent")
+	resp, err = http.Get(baseURL + "/api/v1/spells/nonexistent")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, 404, resp.StatusCode)
 
-	// Test health endpoint
-	resp, err = http.Get("http://127.0.0.1:8080/healthz")
+	resp, err = http.Get(baseURL + "/healthz")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -177,13 +177,16 @@ func TestIntegrationLicenseEndpoint(t *testing.T) {
 	svc := service.New(store, store, store, store, store, store, store, store, store, store, store, store, store, store)
 
 	log := zerolog.Nop()
-	cfg := &config.Config{Server: config.ServerConfig{Host: "127.0.0.1", Port: 0}}
+	port := getFreePort(t)
+	cfg := &config.Config{Server: config.ServerConfig{Host: "127.0.0.1", Port: port}}
 	srv := httpserver.NewServer(cfg, log, svc)
 	go srv.Start()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 	defer srv.Shutdown()
 
-	resp, err := http.Get("http://127.0.0.1:8080/api/v1/license")
+	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
+
+	resp, err := http.Get(baseURL + "/api/v1/license")
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
