@@ -42,6 +42,9 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 	host, _ := container.Host(ctx)
 	port, _ := container.MappedPort(ctx, "5432")
 
+	// Wait for Postgres to fully initialize after port is ready
+	time.Sleep(2 * time.Second)
+
 	dsn := fmt.Sprintf("host=%s port=%s user=test password=test dbname=test sslmode=disable", host, port.Port())
 	pool, err := pgxpool.New(ctx, dsn)
 	require.NoError(t, err)
